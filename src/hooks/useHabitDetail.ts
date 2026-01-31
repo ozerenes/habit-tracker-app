@@ -35,25 +35,36 @@ export function useHabitDetail(habitId: string | undefined) {
     refetch();
   }, [refetch]);
 
+  const [completingDate, setCompletingDate] = useState<string | null>(null);
+
   const checkIn = useCallback(
     async (date: string, count: number = 1, note?: string) => {
       if (!habitId) return null;
-      const ci = await habitService.addCompletion(habitId, date, count, note);
-      setCheckIns((prev) => {
-        const idx = prev.findIndex((c) => c.habitId === habitId && c.date === date);
-        if (idx >= 0) {
-          const next = [...prev];
-          next[idx] = ci;
-          return next;
-        }
-        return [ci, ...prev];
-      });
-      const updated = await habitService.getHabitById(habitId);
-      if (updated) setHabit(updated);
-      return ci;
+      if (completingDate !== null) return null;
+      setCompletingDate(date);
+      try {
+        const ci = await habitService.addCompletion(habitId, date, count, note);
+        const normalizedDate = ci.date;
+        setCheckIns((prev) => {
+          const idx = prev.findIndex(
+            (c) => c.habitId === habitId && c.date === normalizedDate
+          );
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = ci;
+            return next;
+          }
+          return [ci, ...prev];
+        });
+        const updated = await habitService.getHabitById(habitId);
+        if (updated) setHabit(updated);
+        return ci;
+      } finally {
+        setCompletingDate((d) => (d === date ? null : d));
+      }
     },
-    [habitId]
+    [habitId, completingDate]
   );
 
-  return { habit, checkIns, loading, error, refetch, checkIn };
+  return { habit, checkIns, loading, error, refetch, checkIn, isCompleting: completingDate !== null };
 }

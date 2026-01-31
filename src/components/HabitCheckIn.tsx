@@ -6,9 +6,10 @@ type HabitCheckInProps = {
   count: number;
   checked: boolean;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-export function HabitCheckIn({ date, count, checked, onPress }: HabitCheckInProps) {
+export function HabitCheckIn({ date, count, checked, onPress, disabled }: HabitCheckInProps) {
   const displayDate = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -17,8 +18,9 @@ export function HabitCheckIn({ date, count, checked, onPress }: HabitCheckInProp
 
   return (
     <Pressable
-      style={[styles.container, checked && styles.checked]}
+      style={[styles.container, checked && styles.checked, disabled && styles.disabled]}
       onPress={onPress}
+      disabled={disabled}
       android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
     >
       <Text style={styles.date}>{displayDate}</Text>
@@ -41,6 +43,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e3a2f',
     borderWidth: 1,
     borderColor: '#2d5a47',
+  },
+  disabled: {
+    opacity: 0.6,
   },
   date: {
     fontSize: 14,

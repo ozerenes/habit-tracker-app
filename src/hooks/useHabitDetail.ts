@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { habitService } from '@/services';
-import type { Habit, HabitCheckIn } from '@/storage';
+import type { Habit, HabitCompletion } from '@/storage';
 
 export function useHabitDetail(habitId: string | undefined) {
   const [habit, setHabit] = useState<Habit | null>(null);
-  const [checkIns, setCheckIns] = useState<HabitCheckIn[]>([]);
+  const [checkIns, setCheckIns] = useState<HabitCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +20,7 @@ export function useHabitDetail(habitId: string | undefined) {
     try {
       const [habitData, checkInsData] = await Promise.all([
         habitService.getHabitById(habitId),
-        habitService.getCheckInsForHabit(habitId),
+        habitService.getCompletionsForHabit(habitId),
       ]);
       setHabit(habitData);
       setCheckIns(checkInsData);
@@ -38,7 +38,7 @@ export function useHabitDetail(habitId: string | undefined) {
   const checkIn = useCallback(
     async (date: string, count: number = 1, note?: string) => {
       if (!habitId) return null;
-      const ci = await habitService.addCheckIn(habitId, date, count, note);
+      const ci = await habitService.addCompletion(habitId, date, count, note);
       setCheckIns((prev) => {
         const idx = prev.findIndex((c) => c.habitId === habitId && c.date === date);
         if (idx >= 0) {

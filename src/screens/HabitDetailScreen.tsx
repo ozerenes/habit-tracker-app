@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useHabitDetail } from '@/hooks';
-import { HabitCheckIn } from '@/components';
+import { useHabitDetail, useWeeklyInsights } from '@/hooks';
+import { HabitCheckIn, WeeklyInsights } from '@/components';
 
 export function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const habitId = Array.isArray(id) ? id[0] : id;
   const { habit, checkIns, loading, error, checkIn, isCompleting } = useHabitDetail(habitId);
+  const { insights: weeklyInsights, loading: insightsLoading } = useWeeklyInsights(habitId, 8);
   const [today] = useState(() => new Date().toISOString().slice(0, 10));
 
   const handleCheckIn = async (date: string) => {
@@ -78,6 +79,8 @@ export function HabitDetailScreen() {
           ))
         )}
       </View>
+
+      <WeeklyInsights insights={weeklyInsights} loading={insightsLoading} />
     </ScrollView>
   );
 }

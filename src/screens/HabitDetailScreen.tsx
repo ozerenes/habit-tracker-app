@@ -1,10 +1,21 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import React, { useState, useLayoutEffect } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useHabitDetail, useWeeklyInsights } from '@/hooks';
 import { HabitCheckIn, WeeklyInsights } from '@/components';
-import { useTheme } from '@/theme';
-import { SPACING } from '@/theme';
+import { useTheme, SPACING } from '@/theme';
+import { ROUTES } from '@/navigation/routes';
+import { habitService } from '@/services';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -13,10 +24,16 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+const HEADER_ICON_SIZE = 24;
+const HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 };
+
 export function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const navigation = useNavigation();
   const habitId = Array.isArray(id) ? id[0] : id;
   const theme = useTheme();
+  const [isDeleting, setIsDeleting] = useState(false);
   const {
     habit,
     checkIns,
@@ -32,6 +49,74 @@ export function HabitDetailScreen() {
 
   const [today] = React.useState(() => new Date().toISOString().slice(0, 10));
   const todayCheckIn = checkIns.find((c) => c.date === today);
+
+  const handleBackToHome = () => {
+    router.replace(ROUTES.TABS.HOME);
+  };
+
+  const handleDeleteHabit = () => {
+    if (!habitId) return;
+    Alert.alert(
+      "Alışkanlığı Sil",
+      "Bu alışkanlığı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              const deleted = await habitService.deleteHabit(habitId);
+              if (deleted) router.replace(ROUTES.TABS.HOME);
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  useLayoutEffect(() => {
+    const tint = theme.textPrimary;
+    navigation.setOptions({
+      headerLeft: () => (
+        <Pressable
+          onPress={handleBackToHome}
+          hitSlop={HIT_SLOP}
+          style={({ pressed }) => [
+            styles.headerButton,
+            pressed && styles.headerButtonPressed,
+          ]}
+        >
+          <Ionicons name="home-outline" size={HEADER_ICON_SIZE} color={tint} />
+        </Pressable>
+      ),
+      headerRight: () =>
+        habit ? (
+          <Pressable
+            onPress={handleDeleteHabit}
+            disabled={isDeleting}
+            hitSlop={HIT_SLOP}
+            style={({ pressed }) => [
+              styles.headerButton,
+              pressed && styles.headerButtonPressed,
+            ]}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color={theme.error} />
+            ) : (
+              <Ionicons
+                name="trash-outline"
+                size={HEADER_ICON_SIZE}
+                color={theme.error}
+              />
+            )}
+          </Pressable>
+        ) : null,
+    });
+  }, [navigation, theme.textPrimary, theme.error, habit, isDeleting]);
 
   if (loading) {
     return (
@@ -137,6 +222,15 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: SPACING.xxl + 60,
+  },
+  headerButton: {
+    padding: SPACING.xs,
+    marginHorizontal: Platform.OS === 'ios' ? -4 : 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerButtonPressed: {
+    opacity: 0.6,
   },
   center: {
     flex: 1,

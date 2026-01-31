@@ -1,22 +1,15 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import type { Habit } from '@/storage';
-import { ROUTES } from '@/navigation/routes';
 
 type HabitCardProps = {
   habit: Habit;
+  onPress?: (habit: Habit) => void;
 };
 
-export function HabitCard({ habit }: HabitCardProps) {
-  const router = useRouter();
-
-  const handlePress = () => {
-    router.push(ROUTES.HABIT.DETAIL(habit.id));
-  };
-
+export function HabitCard({ habit, onPress }: HabitCardProps) {
   return (
-    <Pressable style={styles.card} onPress={handlePress} android_ripple={{ color: 'rgba(255,255,255,0.1)' }}>
+    <Pressable style={styles.card} onPress={() => onPress?.(habit)} android_ripple={{ color: 'rgba(255,255,255,0.1)' }}>
       <View style={[styles.icon, { backgroundColor: habit.color }]}>
         <Text style={styles.iconText}>{habit.icon}</Text>
       </View>

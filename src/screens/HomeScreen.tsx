@@ -16,6 +16,10 @@ export function HomeScreen() {
     router.push(ROUTES.HABIT.CREATE);
   };
 
+  const handleHabitPress = (habit: { id: string }) => {
+    router.push(ROUTES.HABIT.DETAIL(habit.id));
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -45,7 +49,7 @@ export function HomeScreen() {
           <Text style={styles.emptyHint}>Add your first habit to start tracking</Text>
         </View>
       ) : (
-        todayHabits.map((habit) => <HabitCard key={habit.id} habit={habit} />)
+        todayHabits.map((habit) => <HabitCard key={habit.id} habit={habit} onPress={handleHabitPress} />)
       )}
 
       <AddHabitButton onPress={handleAddHabit} />

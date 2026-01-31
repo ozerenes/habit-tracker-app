@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { habitService } from '@/services';
 import type { Habit } from '@/storage';
 
+type CreateHabitInput = Omit<
+  Habit,
+  'id' | 'streak' | 'createdAt' | 'localUpdatedAt' | 'syncStatus'
+>;
+
 export function useHabits() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,14 +29,11 @@ export function useHabits() {
     refetch();
   }, [refetch]);
 
-  const addHabit = useCallback(
-    async (data: Omit<Habit, 'id' | 'streak' | 'createdAt' | 'updatedAt'>) => {
-      const habit = await habitService.createHabit(data);
-      setHabits((prev) => [...prev, habit]);
-      return habit;
-    },
-    []
-  );
+  const addHabit = useCallback(async (data: CreateHabitInput) => {
+    const habit = await habitService.createHabit(data);
+    setHabits((prev) => [...prev, habit]);
+    return habit;
+  }, []);
 
   const removeHabit = useCallback(async (id: string) => {
     const ok = await habitService.deleteHabit(id);

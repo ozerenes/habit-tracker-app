@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SyncOnReconnect } from '@/components';
 
 export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
+      <SyncOnReconnect />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: '#0a0a0a' },

@@ -3,15 +3,16 @@
  * Will handle: queue local changes, push when online, pull remote, resolve conflicts.
  */
 
+import NetInfo from '@react-native-community/netinfo';
 import { storage } from '@/storage';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
-
 export const syncService = {
-  /** Check if device is online - stub for future NetInfo integration */
+  /** Check if device is online via NetInfo */
   async isOnline(): Promise<boolean> {
-    return true; // TODO: use @react-native-community/netinfo
+    const state = await NetInfo.fetch();
+    return state.isConnected === true;
   },
 
   /** Queue a change for later sync - called by services on mutation */

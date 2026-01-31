@@ -70,6 +70,30 @@ export const habitService = {
     return storage.completions.getByDate(habitId, normalized);
   },
 
+  /** Get all completions for a specific date (any habit). */
+  async getCompletionsForDate(date: string): Promise<HabitCompletion[]> {
+    const normalized = normalizeDate(date);
+    const all = await storage.completions.getAll();
+    return all.filter((c) => c.date === normalized && !c.deletedAt);
+  },
+
+  async removeCompletion(habitId: string, date: string): Promise<boolean> {
+    const normalized = normalizeDate(date);
+    const existing = await storage.completions.getByDate(habitId, normalized);
+    if (!existing) return false;
+
+    const all = await storage.completions.getAll();
+    const filtered = all.filter(
+      (c) => !(c.habitId === habitId && c.date === normalized)
+    );
+    await storage.completions.setAll(filtered);
+
+    const streak = await this.calculateStreak(habitId, normalized);
+    await this.updateHabit(habitId, { streak });
+
+    return true;
+  },
+
   async addCompletion(
     habitId: string,
     date: string,

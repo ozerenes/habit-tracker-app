@@ -132,5 +132,5 @@ export const storage = {
   async getSyncQueue(): Promise<unknown[]> {
     return [];
   },
-  async setSyncQueue(): Promise<void> {},
+  async setSyncQueue(_queue?: unknown[]): Promise<void> {},
 };

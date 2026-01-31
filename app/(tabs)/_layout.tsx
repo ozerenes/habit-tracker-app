@@ -1,53 +1,84 @@
 import { Tabs } from 'expo-router';
-import { Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/theme';
+import { SyncIndicator } from '@/components';
 
-function TabIcon({ emoji }: { emoji: string }) {
-  return <Text style={styles.tabIcon}>{emoji}</Text>;
+function TabIcon({
+  name,
+  focused,
+  color,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+}) {
+  return <Ionicons name={name} size={22} color={color} />;
 }
 
 export default function TabLayout() {
+  const theme = useTheme();
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#2d5a47',
-        tabBarInactiveTintColor: '#666',
-        headerStyle: { backgroundColor: '#0a0a0a' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '600', fontSize: 17 },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Today',
-          tabBarIcon: () => <TabIcon emoji="📅" />,
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <SyncIndicator />
+      <Tabs
+        screenOptions={{
+          tabBarStyle: {
+            backgroundColor: theme.surface,
+            borderTopColor: theme.divider,
+          },
+          tabBarActiveTintColor: theme.primary,
+          tabBarInactiveTintColor: theme.textTertiary,
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.textPrimary,
+          headerTitleStyle: {
+            fontWeight: '600',
+            fontSize: 17,
+            color: theme.textPrimary,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="habits"
-        options={{
-          title: 'Habits',
-          tabBarIcon: () => <TabIcon emoji="✅" />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: () => <TabIcon emoji="👤" />,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Today',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name={focused ? 'calendar' : 'calendar-outline'}
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="habits"
+          options={{
+            title: 'Habits',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name={focused ? 'checkbox' : 'checkbox-outline'}
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name={focused ? 'person' : 'person-outline'}
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#0a0a0a',
-    borderTopColor: '#1a1a1a',
-  },
-  tabIcon: {
-    fontSize: 20,
-  },
-});

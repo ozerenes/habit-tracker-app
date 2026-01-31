@@ -66,5 +66,43 @@ export function useHabitDetail(habitId: string | undefined) {
     [habitId, completingDate]
   );
 
-  return { habit, checkIns, loading, error, refetch, checkIn, isCompleting: completingDate !== null };
+  const toggleCheckIn = useCallback(
+    async (date: string) => {
+      if (!habitId || completingDate !== null) return;
+      const existing = checkIns.find((c) => c.date === date);
+      setCompletingDate(date);
+      try {
+        if (existing) {
+          await habitService.removeCompletion(habitId, date);
+          setCheckIns((prev) =>
+            prev.filter((c) => !(c.habitId === habitId && c.date === date))
+          );
+          const updated = await habitService.getHabitById(habitId);
+          if (updated) setHabit(updated);
+        } else {
+          await habitService.addCompletion(habitId, date, 1);
+          const [habitData, checkInsData] = await Promise.all([
+            habitService.getHabitById(habitId),
+            habitService.getCompletionsForHabit(habitId),
+          ]);
+          if (habitData) setHabit(habitData);
+          setCheckIns(checkInsData);
+        }
+      } finally {
+        setCompletingDate((d) => (d === date ? null : d));
+      }
+    },
+    [habitId, checkIns, completingDate]
+  );
+
+  return {
+    habit,
+    checkIns,
+    loading,
+    error,
+    refetch,
+    checkIn,
+    toggleCheckIn,
+    isCompleting: completingDate !== null,
+  };
 }

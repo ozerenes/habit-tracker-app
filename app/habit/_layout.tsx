@@ -18,11 +18,11 @@ export default function HabitLayout() {
     >
       <Stack.Screen
         name="[id]"
-        options={{ title: 'Habit', headerBackTitle: 'Back' }}
+        options={{ title: 'Alışkanlık', headerBackTitle: 'Ana Sayfaya Dön' }}
       />
       <Stack.Screen
         name="create"
-        options={{ title: 'New Habit', headerBackTitle: 'Cancel' }}
+        options={{ title: 'Yeni Alışkanlık', headerBackTitle: 'Ana Sayfaya Dön' }}
       />
     </Stack>
   );

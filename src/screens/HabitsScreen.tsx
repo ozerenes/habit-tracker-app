@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useHabits } from '@/hooks';
 import { HabitCard, AddHabitButton } from '@/components';
 import { ROUTES } from '@/navigation/routes';
@@ -8,6 +8,12 @@ import { ROUTES } from '@/navigation/routes';
 export function HabitsScreen() {
   const router = useRouter();
   const { habits, loading, error, refetch } = useHabits();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const handleAddHabit = () => {
     router.push(ROUTES.HABIT.CREATE);

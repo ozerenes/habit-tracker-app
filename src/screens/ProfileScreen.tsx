@@ -1,32 +1,51 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHabits } from '@/hooks';
+import { useTheme } from '@/theme';
+import { SPACING, RADIUS } from '@/theme';
 
 export function ProfileScreen() {
+  const theme = useTheme();
   const { habits } = useHabits();
 
   const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);
   const activeHabits = habits.length;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Profile</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+    >
+      <Text style={[styles.title, { color: theme.textPrimary }]}>Profile</Text>
 
       <View style={styles.stats}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{activeHabits}</Text>
-          <Text style={styles.statLabel}>Habits</Text>
+        <View style={[styles.stat, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.statValue, { color: theme.textPrimary }]}>
+            {activeHabits}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Habits
+          </Text>
         </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{totalStreak}</Text>
-          <Text style={styles.statLabel}>Total Streak Days</Text>
+        <View style={[styles.stat, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.statValue, { color: theme.textPrimary }]}>
+            {totalStreak}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Total days
+          </Text>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Offline Mode</Text>
-        <Text style={styles.sectionText}>
-          All data is stored locally. Sync will be available in a future update.
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Your data
+        </Text>
+        <Text
+          style={[styles.sectionText, { color: theme.textSecondary }]}
+        >
+          All data is stored on your device. Sync will be available in a future
+          update.
         </Text>
       </View>
     </ScrollView>
@@ -36,54 +55,46 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: SPACING.xxl + 60,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 24,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: SPACING.lg,
   },
   stats: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
+    gap: SPACING.md,
+    marginBottom: SPACING.lg,
   },
   stat: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
   },
   statLabel: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 4,
+    fontSize: 12,
+    marginTop: SPACING.xs,
   },
   section: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
   },
   sectionText: {
     fontSize: 14,
-    color: '#888',
     lineHeight: 20,
   },
 });

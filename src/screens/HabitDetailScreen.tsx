@@ -1,82 +1,127 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useHabitDetail, useWeeklyInsights } from '@/hooks';
 import { HabitCheckIn, WeeklyInsights } from '@/components';
+import { useTheme } from '@/theme';
+import { SPACING } from '@/theme';
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 export function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const habitId = Array.isArray(id) ? id[0] : id;
-  const { habit, checkIns, loading, error, checkIn, isCompleting } = useHabitDetail(habitId);
-  const { insights: weeklyInsights, loading: insightsLoading } = useWeeklyInsights(habitId, 8);
-  const [today] = useState(() => new Date().toISOString().slice(0, 10));
+  const theme = useTheme();
+  const {
+    habit,
+    checkIns,
+    loading,
+    error,
+    toggleCheckIn,
+    isCompleting,
+  } = useHabitDetail(habitId);
+  const {
+    insights: weeklyInsights,
+    loading: insightsLoading,
+  } = useWeeklyInsights(habitId, 8);
 
-  const handleCheckIn = async (date: string) => {
-    await checkIn(date, 1);
-  };
+  const [today] = React.useState(() => new Date().toISOString().slice(0, 10));
+  const todayCheckIn = checkIns.find((c) => c.date === today);
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.loadingText, { color: theme.textTertiary }]}>
+          Loading…
+        </Text>
       </View>
     );
   }
 
   if (error || !habit) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error ?? 'Habit not found'}</Text>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.errorText, { color: theme.error }]}>
+          {error ?? 'Habit not found'}
+        </Text>
       </View>
     );
   }
 
-  const todayCheckIn = checkIns.find((c) => c.date === today);
+  const iconBg = hexToRgba(habit.color, 0.2);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={[styles.header, { borderColor: habit.color }]}>
-        <Text style={styles.icon}>{habit.icon}</Text>
-        <Text style={styles.name}>{habit.name}</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+    >
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
+        <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
+          <Text style={styles.icon}>{habit.icon}</Text>
+        </View>
+        <Text style={[styles.name, { color: theme.textPrimary }]}>
+          {habit.name}
+        </Text>
         <View style={styles.meta}>
-          <Text style={styles.streak}>🔥 {habit.streak} day streak</Text>
+          <Text style={[styles.streak, { color: theme.textTertiary }]}>
+            {habit.streak} days
+          </Text>
           {habit.syncStatus === 'pending' && (
-            <Text style={styles.syncPending}>· Pending sync</Text>
+            <Text style={[styles.syncPending, { color: theme.textTertiary }]}>
+              · Saved locally
+            </Text>
           )}
         </View>
-        {habit.description && (
-          <Text style={styles.description}>{habit.description}</Text>
-        )}
+        {habit.description ? (
+          <Text
+            style={[styles.description, { color: theme.textSecondary }]}
+            numberOfLines={2}
+          >
+            {habit.description}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Today</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Today
+        </Text>
         <HabitCheckIn
           date={today}
           count={todayCheckIn?.count ?? 0}
           checked={!!todayCheckIn}
-          onPress={() => handleCheckIn(today)}
+          onPress={() => toggleCheckIn(today)}
           disabled={isCompleting}
-          syncStatus={todayCheckIn?.syncStatus}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Recent
+        </Text>
         {checkIns.length === 0 ? (
-          <Text style={styles.emptyText}>No check-ins yet</Text>
+          <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
+            No check-ins yet
+          </Text>
         ) : (
-          checkIns.slice(0, 14).map((ci) => (
-            <HabitCheckIn
-              key={ci.id}
-              date={ci.date}
-              count={ci.count}
-              checked={true}
-              onPress={() => handleCheckIn(ci.date)}
-              disabled={isCompleting}
-              syncStatus={ci.syncStatus}
-            />
-          ))
+          checkIns
+            .filter((c) => c.date !== today)
+            .slice(0, 14)
+            .map((ci) => (
+              <HabitCheckIn
+                key={ci.id}
+                date={ci.date}
+                count={ci.count}
+                checked={true}
+                onPress={() => toggleCheckIn(ci.date)}
+                disabled={isCompleting}
+              />
+            ))
         )}
       </View>
 
@@ -88,75 +133,71 @@ export function HabitDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: SPACING.xxl + 60,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a0a0a',
   },
   loadingText: {
-    color: '#888',
     fontSize: 16,
   },
   errorText: {
-    color: '#e55',
     fontSize: 16,
   },
   header: {
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    borderLeftWidth: 4,
-    marginBottom: 24,
+    padding: SPACING.lg,
+    borderRadius: 14,
+    marginBottom: SPACING.lg,
+  },
+  iconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
   },
   icon: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 28,
   },
   name: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
   },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
+    gap: SPACING.xs,
+    marginTop: SPACING.sm,
   },
   streak: {
-    fontSize: 16,
-    color: '#888',
+    fontSize: 14,
   },
   syncPending: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: 12,
   },
   description: {
     fontSize: 14,
-    color: '#aaa',
-    marginTop: 12,
+    marginTop: SPACING.sm,
     textAlign: 'center',
+    paddingHorizontal: SPACING.md,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
-    marginBottom: 12,
+    marginBottom: SPACING.sm,
   },
   emptyText: {
     fontSize: 14,
-    color: '#555',
-    paddingVertical: 16,
+    paddingVertical: SPACING.md,
   },
 });

@@ -1,5 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@/theme';
+import { SPACING, RADIUS } from '@/theme';
+import { CompletionCircle } from './CompletionCircle';
 
 type HabitCheckInProps = {
   date: string;
@@ -10,7 +13,14 @@ type HabitCheckInProps = {
   syncStatus?: 'synced' | 'pending';
 };
 
-export function HabitCheckIn({ date, count, checked, onPress, disabled, syncStatus }: HabitCheckInProps) {
+export function HabitCheckIn({
+  date,
+  count,
+  checked,
+  onPress,
+  disabled,
+}: HabitCheckInProps) {
+  const theme = useTheme();
   const displayDate = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -18,20 +28,39 @@ export function HabitCheckIn({ date, count, checked, onPress, disabled, syncStat
   });
 
   return (
-    <Pressable
-      style={[styles.container, checked && styles.checked, disabled && styles.disabled]}
-      onPress={onPress}
-      disabled={disabled}
-      android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.surface,
+        },
+        checked && {
+          backgroundColor: theme.surfaceElevated,
+        },
+      ]}
     >
-      <Text style={styles.date}>{displayDate}</Text>
-      <View style={styles.right}>
-        {syncStatus === 'pending' && (
-          <Text style={styles.syncPending}>Pending</Text>
+      <Pressable
+        style={({ pressed }) => [styles.main, pressed && { opacity: 0.98 }]}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <Text style={[styles.date, { color: theme.textPrimary }]}>
+          {displayDate}
+        </Text>
+        {count > 1 && (
+          <Text style={[styles.count, { color: theme.textTertiary }]}>
+            {count}×
+          </Text>
         )}
-        <Text style={styles.count}>{count}×</Text>
-      </View>
-    </Pressable>
+      </Pressable>
+      <CompletionCircle
+        checked={checked}
+        onPress={onPress}
+        disabled={disabled}
+        isPrimaryAction={false}
+        size={26}
+      />
+    </View>
   );
 }
 
@@ -40,35 +69,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 8,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
   },
-  checked: {
-    backgroundColor: '#1e3a2f',
-    borderWidth: 1,
-    borderColor: '#2d5a47',
-  },
-  disabled: {
-    opacity: 0.6,
+  main: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
   },
   date: {
     fontSize: 14,
-    color: '#fff',
     fontWeight: '500',
   },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  syncPending: {
-    fontSize: 11,
-    color: '#888',
-  },
   count: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: 13,
   },
 });

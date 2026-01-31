@@ -4,9 +4,12 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useHabits } from '@/hooks';
 import { HabitCard, AddHabitButton } from '@/components';
 import { ROUTES } from '@/navigation/routes';
+import { useTheme } from '@/theme';
+import { SPACING } from '@/theme';
 
 export function HabitsScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { habits, loading, error, refetch } = useHabits();
 
   useFocusEffect(
@@ -26,17 +29,22 @@ export function HabitsScreen() {
   const isInitialLoad = loading && habits.length === 0;
   if (isInitialLoad) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.placeholderText}>Loading habits...</Text>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.placeholderText, { color: theme.textTertiary }]}>
+          Loading habits...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
-        <Text style={styles.retryHint} onPress={refetch}>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+        <Text
+          style={[styles.retryHint, { color: theme.primary }]}
+          onPress={refetch}
+        >
           Tap to retry
         </Text>
       </View>
@@ -47,21 +55,36 @@ export function HabitsScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, isEmpty && styles.contentEmpty]}
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={[
+        styles.content,
+        isEmpty && styles.contentEmpty,
+      ]}
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#2d5a47" />
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={refetch}
+          tintColor={theme.primary}
+        />
       }
     >
       <View style={styles.header}>
-        <Text style={styles.title}>My Habits</Text>
-        <Text style={styles.subtitle}>{habits.length} habits</Text>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>
+          My Habits
+        </Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          {habits.length} habits
+        </Text>
       </View>
 
       {isEmpty ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No habits yet</Text>
-          <Text style={styles.emptyHint}>Add your first habit to start tracking</Text>
+          <Text style={[styles.emptyTitle, { color: theme.textSecondary }]}>
+            No habits yet
+          </Text>
+          <Text style={[styles.emptyHint, { color: theme.textTertiary }]}>
+            Add your first habit
+          </Text>
           <View style={styles.emptyAction}>
             <AddHabitButton onPress={handleAddHabit} />
           </View>
@@ -69,7 +92,12 @@ export function HabitsScreen() {
       ) : (
         <>
           {habits.map((habit) => (
-            <HabitCard key={habit.id} habit={habit} onPress={handleHabitPress} />
+            <HabitCard
+              key={habit.id}
+              habit={habit}
+              onPress={handleHabitPress}
+              showCompletionCircle={false}
+            />
           ))}
           <AddHabitButton onPress={handleAddHabit} />
         </>
@@ -81,11 +109,10 @@ export function HabitsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: SPACING.xl + 60,
   },
   contentEmpty: {
     flexGrow: 1,
@@ -94,54 +121,46 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a0a0a',
-    padding: 24,
+    padding: SPACING.lg,
   },
   placeholderText: {
-    color: '#888',
     fontSize: 16,
   },
   errorText: {
-    color: '#e55',
     fontSize: 16,
     textAlign: 'center',
   },
   retryHint: {
-    color: '#2d5a47',
     fontSize: 14,
-    marginTop: 12,
+    marginTop: SPACING.sm,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
   },
   subtitle: {
-    fontSize: 15,
-    color: '#888',
-    marginTop: 4,
+    fontSize: 14,
+    marginTop: SPACING.xs,
   },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 48,
+    paddingVertical: SPACING.xxl,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#888',
+    fontSize: 17,
+    fontWeight: '500',
   },
   emptyHint: {
     fontSize: 14,
-    color: '#555',
-    marginTop: 8,
+    marginTop: SPACING.sm,
   },
   emptyAction: {
-    marginTop: 24,
+    marginTop: SPACING.lg,
     width: '100%',
   },
 });

@@ -1,28 +1,75 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Habit } from '@/storage';
+import { useTheme } from '@/theme';
+import { SPACING, RADIUS } from '@/theme';
+import { CompletionCircle } from './CompletionCircle';
 
 type HabitCardProps = {
   habit: Habit;
   onPress?: (habit: Habit) => void;
+  /** When provided, shows completion circle and handles tap-to-complete. Stops propagation to onPress. */
+  onCompletePress?: (habit: Habit) => void;
+  completed?: boolean;
+  /** Show completion circle (Home) vs navigate-only (Habits list) */
+  showCompletionCircle?: boolean;
 };
 
-export function HabitCard({ habit, onPress }: HabitCardProps) {
-  return (
-    <Pressable style={styles.card} onPress={() => onPress?.(habit)} android_ripple={{ color: 'rgba(255,255,255,0.1)' }}>
-      <View style={[styles.icon, { backgroundColor: habit.color }]}>
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function HabitCard({
+  habit,
+  onPress,
+  onCompletePress,
+  completed = false,
+  showCompletionCircle = false,
+}: HabitCardProps) {
+  const theme = useTheme();
+  const iconBg = hexToRgba(habit.color, 0.18);
+
+  const handleCardPress = () => onPress?.(habit);
+
+  const handleCirclePress = () => {
+    onCompletePress?.(habit);
+  };
+
+  const mainContent = (
+    <>
+      <View style={[styles.icon, { backgroundColor: iconBg }]}>
         <Text style={styles.iconText}>{habit.icon}</Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.name}>{habit.name}</Text>
-        <View style={styles.meta}>
-          <Text style={styles.streak}>🔥 {habit.streak} day streak</Text>
-          {habit.syncStatus === 'pending' && (
-            <Text style={styles.syncPending}>Pending</Text>
-          )}
-        </View>
+        <Text style={[styles.name, { color: theme.textPrimary }]} numberOfLines={1}>
+          {habit.name}
+        </Text>
       </View>
-    </Pressable>
+    </>
+  );
+
+  return (
+    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.mainArea,
+          pressed && { opacity: 0.98 },
+        ]}
+        onPress={handleCardPress}
+      >
+        {mainContent}
+      </Pressable>
+      {showCompletionCircle && (
+        <CompletionCircle
+          checked={completed}
+          onPress={handleCirclePress}
+          isPrimaryAction
+        />
+      )}
+    </View>
   );
 }
 
@@ -30,42 +77,37 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    minHeight: 68,
+    marginBottom: SPACING.sm,
+  },
+  mainArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   icon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: SPACING.md,
   },
   iconText: {
-    fontSize: 22,
+    fontSize: 18,
   },
   content: {
     flex: 1,
+    minWidth: 0,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: 17,
+    fontWeight: '500',
   },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  streak: {
-    fontSize: 13,
-    color: '#888',
-  },
-  syncPending: {
-    fontSize: 11,
-    color: '#888',
+  circleWrap: {
+    marginLeft: SPACING.sm,
   },
 });

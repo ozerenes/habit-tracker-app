@@ -1,10 +1,8 @@
-/**
- * Basic weekly insights list - accurate, minimal visuals.
- */
-
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { WeeklyInsight } from '@/services';
+import { useTheme } from '@/theme';
+import { SPACING } from '@/theme';
 
 type WeeklyInsightsProps = {
   insights: WeeklyInsight[];
@@ -12,11 +10,17 @@ type WeeklyInsightsProps = {
 };
 
 export function WeeklyInsights({ insights, loading }: WeeklyInsightsProps) {
+  const theme = useTheme();
+
   if (loading) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weekly</Text>
-        <Text style={styles.placeholder}>Loading...</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          Last 8 weeks
+        </Text>
+        <Text style={[styles.placeholder, { color: theme.textTertiary }]}>
+          Loading…
+        </Text>
       </View>
     );
   }
@@ -27,16 +31,33 @@ export function WeeklyInsights({ insights, loading }: WeeklyInsightsProps) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Weekly</Text>
+      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+        Last 8 weeks
+      </Text>
       {insights.map((w) => (
         <View key={w.weekKey} style={styles.row}>
-          <Text style={styles.label}>{w.weekLabel}</Text>
-          <Text style={styles.count}>
-            {w.daysCompleted}/{w.targetDays} ({Math.round(w.completionRate * 100)}%)
-          </Text>
-          <View style={styles.barBg}>
+          <View style={styles.rowHeader}>
+            <Text style={[styles.label, { color: theme.textPrimary }]}>
+              {w.weekLabel}
+            </Text>
+            <Text style={[styles.fraction, { color: theme.textTertiary }]}>
+              {w.daysCompleted}/{w.targetDays}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.barBg,
+              { backgroundColor: theme.surfaceElevated },
+            ]}
+          >
             <View
-              style={[styles.barFill, { width: `${w.completionRate * 100}%` }]}
+              style={[
+                styles.barFill,
+                {
+                  width: `${Math.min(100, w.completionRate * 100)}%`,
+                  backgroundColor: theme.primaryMuted,
+                },
+              ]}
             />
           </View>
         </View>
@@ -47,40 +68,39 @@ export function WeeklyInsights({ insights, loading }: WeeklyInsightsProps) {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   placeholder: {
     fontSize: 14,
-    color: '#888',
   },
   row: {
-    marginBottom: 12,
+    marginBottom: SPACING.md,
+  },
+  rowHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
   },
   label: {
     fontSize: 14,
-    color: '#ccc',
-    marginBottom: 4,
+    fontWeight: '500',
   },
-  count: {
-    fontSize: 13,
-    color: '#888',
-    marginBottom: 4,
+  fraction: {
+    fontSize: 14,
   },
   barBg: {
     height: 4,
-    backgroundColor: '#2a2a2a',
     borderRadius: 2,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    backgroundColor: '#2d5a47',
     borderRadius: 2,
   },
 });

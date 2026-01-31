@@ -1,13 +1,24 @@
 import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useHabits } from '@/hooks';
+import { useTodayHabits } from '@/hooks';
 import { HabitCard, AddHabitButton } from '@/components';
 import { ROUTES } from '@/navigation/routes';
+import { useTheme } from '@/theme';
+import { SPACING } from '@/theme';
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
 export function HomeScreen() {
   const router = useRouter();
-  const { habits, loading, error, refetch } = useHabits();
+  const theme = useTheme();
+  const { habits, loading, error, refetch, toggleCompletion, isCompleted } = useTodayHabits();
 
   useFocusEffect(
     useCallback(() => {
@@ -16,7 +27,7 @@ export function HomeScreen() {
   );
 
   const todayHabits = habits.slice(0, 5);
-  const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);
+  const hasMore = habits.length > 5;
 
   const handleAddHabit = () => {
     router.push(ROUTES.HABIT.CREATE);
@@ -26,47 +37,69 @@ export function HomeScreen() {
     router.push(ROUTES.HABIT.DETAIL(habit.id));
   };
 
-  if (loading) {
+  if (loading && habits.length === 0) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.loadingText}>Loading habits...</Text>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.loadingText, { color: theme.textTertiary }]}>
+          Loading habits...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+    >
       <View style={styles.header}>
-        <Text style={styles.title}>Today</Text>
-        <Text style={styles.subtitle}>🔥 {totalStreak} total streak days</Text>
+        <Text style={[styles.greeting, { color: theme.textTertiary }]}>Today</Text>
+        <Text style={[styles.date, { color: theme.textSecondary }]}>
+          {formatDate(new Date())}
+        </Text>
       </View>
 
       {todayHabits.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>No habits yet</Text>
-          <Text style={styles.emptyHint}>Add your first habit to start tracking</Text>
+          <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+            No habits yet
+          </Text>
+          <Text style={[styles.emptyHint, { color: theme.textTertiary }]}>
+            Add your first habit
+          </Text>
+          <AddHabitButton onPress={handleAddHabit} />
         </View>
       ) : (
-        todayHabits.map((habit) => <HabitCard key={habit.id} habit={habit} onPress={handleHabitPress} />)
-      )}
+        <>
+          {todayHabits.map((habit) => (
+            <HabitCard
+              key={habit.id}
+              habit={habit}
+              onPress={handleHabitPress}
+              onCompletePress={(habit) => toggleCompletion(habit.id)}
+              completed={isCompleted(habit.id)}
+              showCompletionCircle
+            />
+          ))}
+          <AddHabitButton onPress={handleAddHabit} />
 
-      <AddHabitButton onPress={handleAddHabit} />
-
-      {habits.length > 5 && (
-        <Text
-          style={styles.viewAll}
-          onPress={() => router.push(ROUTES.TABS.HABITS)}
-        >
-          View all {habits.length} habits →
-        </Text>
+          {hasMore && (
+            <Text
+              style={[styles.viewAll, { color: theme.primary }]}
+              onPress={() => router.push(ROUTES.TABS.HABITS)}
+            >
+              View all {habits.length} habits
+            </Text>
+          )}
+        </>
       )}
     </ScrollView>
   );
@@ -75,58 +108,50 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: SPACING.xl + 60,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a0a0a',
   },
   loadingText: {
-    color: '#888',
     fontSize: 16,
   },
   errorText: {
-    color: '#e55',
     fontSize: 16,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
+  greeting: {
+    fontSize: 14,
+    fontWeight: '500',
   },
-  subtitle: {
-    fontSize: 15,
-    color: '#888',
-    marginTop: 4,
+  date: {
+    fontSize: 14,
+    marginTop: SPACING.xs,
   },
   empty: {
-    paddingVertical: 32,
+    paddingVertical: SPACING.xxl,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 18,
-    color: '#888',
+    fontSize: 17,
     fontWeight: '500',
   },
   emptyHint: {
     fontSize: 14,
-    color: '#555',
-    marginTop: 8,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
   viewAll: {
-    fontSize: 15,
-    color: '#2d5a47',
-    marginTop: 20,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: SPACING.lg,
     textAlign: 'center',
   },
 });

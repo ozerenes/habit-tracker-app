@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type HabitCheckInProps = {
   date: string;
@@ -7,9 +7,10 @@ type HabitCheckInProps = {
   checked: boolean;
   onPress: () => void;
   disabled?: boolean;
+  syncStatus?: 'synced' | 'pending';
 };
 
-export function HabitCheckIn({ date, count, checked, onPress, disabled }: HabitCheckInProps) {
+export function HabitCheckIn({ date, count, checked, onPress, disabled, syncStatus }: HabitCheckInProps) {
   const displayDate = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -24,7 +25,12 @@ export function HabitCheckIn({ date, count, checked, onPress, disabled }: HabitC
       android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
     >
       <Text style={styles.date}>{displayDate}</Text>
-      <Text style={styles.count}>{count}×</Text>
+      <View style={styles.right}>
+        {syncStatus === 'pending' && (
+          <Text style={styles.syncPending}>Pending</Text>
+        )}
+        <Text style={styles.count}>{count}×</Text>
+      </View>
     </Pressable>
   );
 }
@@ -51,6 +57,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#fff',
     fontWeight: '500',
+  },
+  right: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  syncPending: {
+    fontSize: 11,
+    color: '#888',
   },
   count: {
     fontSize: 14,

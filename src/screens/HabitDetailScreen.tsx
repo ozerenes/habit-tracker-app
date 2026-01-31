@@ -37,7 +37,12 @@ export function HabitDetailScreen() {
       <View style={[styles.header, { borderColor: habit.color }]}>
         <Text style={styles.icon}>{habit.icon}</Text>
         <Text style={styles.name}>{habit.name}</Text>
-        <Text style={styles.streak}>🔥 {habit.streak} day streak</Text>
+        <View style={styles.meta}>
+          <Text style={styles.streak}>🔥 {habit.streak} day streak</Text>
+          {habit.syncStatus === 'pending' && (
+            <Text style={styles.syncPending}>· Pending sync</Text>
+          )}
+        </View>
         {habit.description && (
           <Text style={styles.description}>{habit.description}</Text>
         )}
@@ -51,6 +56,7 @@ export function HabitDetailScreen() {
           checked={!!todayCheckIn}
           onPress={() => handleCheckIn(today)}
           disabled={isCompleting}
+          syncStatus={todayCheckIn?.syncStatus}
         />
       </View>
 
@@ -67,6 +73,7 @@ export function HabitDetailScreen() {
               checked={true}
               onPress={() => handleCheckIn(ci.date)}
               disabled={isCompleting}
+              syncStatus={ci.syncStatus}
             />
           ))
         )}
@@ -115,10 +122,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
   streak: {
     fontSize: 16,
     color: '#888',
-    marginTop: 8,
+  },
+  syncPending: {
+    fontSize: 14,
+    color: '#888',
   },
   description: {
     fontSize: 14,

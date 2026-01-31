@@ -15,7 +15,12 @@ export function HabitCard({ habit, onPress }: HabitCardProps) {
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{habit.name}</Text>
-        <Text style={styles.streak}>🔥 {habit.streak} day streak</Text>
+        <View style={styles.meta}>
+          <Text style={styles.streak}>🔥 {habit.streak} day streak</Text>
+          {habit.syncStatus === 'pending' && (
+            <Text style={styles.syncPending}>Pending</Text>
+          )}
+        </View>
       </View>
     </Pressable>
   );
@@ -49,9 +54,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
   streak: {
     fontSize: 13,
     color: '#888',
-    marginTop: 4,
+  },
+  syncPending: {
+    fontSize: 11,
+    color: '#888',
   },
 });

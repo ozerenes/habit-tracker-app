@@ -83,10 +83,15 @@ export const storage = {
     },
     async save(completion: HabitCompletion): Promise<void> {
       const all = await this.getAll();
-      const idx = all.findIndex((c) => c.id === completion.id);
-      if (idx >= 0) all[idx] = completion;
-      else all.push(completion);
-      await completionsStorage.set(all);
+      const sameDay = (c: HabitCompletion) =>
+        c.habitId === completion.habitId && c.date === completion.date;
+      const withoutDuplicates = all.filter(
+        (c) => !sameDay(c) || c.id === completion.id
+      );
+      const idx = withoutDuplicates.findIndex((c) => c.id === completion.id);
+      if (idx >= 0) withoutDuplicates[idx] = completion;
+      else withoutDuplicates.push(completion);
+      await completionsStorage.set(withoutDuplicates);
     },
     async removeByHabitId(habitId: string): Promise<void> {
       const all = await this.getAll().then((list) => list.filter((c) => c.habitId !== habitId));

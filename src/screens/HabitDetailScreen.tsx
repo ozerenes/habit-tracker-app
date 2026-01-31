@@ -7,7 +7,7 @@ import { HabitCheckIn } from '@/components';
 export function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const habitId = Array.isArray(id) ? id[0] : id;
-  const { habit, checkIns, loading, error, checkIn } = useHabitDetail(habitId);
+  const { habit, checkIns, loading, error, checkIn, isCompleting } = useHabitDetail(habitId);
   const [today] = useState(() => new Date().toISOString().slice(0, 10));
 
   const handleCheckIn = async (date: string) => {
@@ -50,6 +50,7 @@ export function HabitDetailScreen() {
           count={todayCheckIn?.count ?? 0}
           checked={!!todayCheckIn}
           onPress={() => handleCheckIn(today)}
+          disabled={isCompleting}
         />
       </View>
 
@@ -65,6 +66,7 @@ export function HabitDetailScreen() {
               count={ci.count}
               checked={true}
               onPress={() => handleCheckIn(ci.date)}
+              disabled={isCompleting}
             />
           ))
         )}

@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useHabits } from '@/hooks';
 import { HabitCard, AddHabitButton } from '@/components';
 import { ROUTES } from '@/navigation/routes';
 
 export function HomeScreen() {
   const router = useRouter();
-  const { habits, loading, error, addHabit } = useHabits();
+  const { habits, loading, error, refetch } = useHabits();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const todayHabits = habits.slice(0, 5);
   const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);

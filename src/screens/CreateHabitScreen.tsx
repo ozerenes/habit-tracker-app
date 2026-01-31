@@ -6,10 +6,10 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useHabits } from '@/hooks';
+import { useCreateHabit } from '@/hooks';
 import { ROUTES } from '@/navigation/routes';
 
 const COLORS = ['#2d5a47', '#5a2d47', '#472d5a', '#5a472d', '#2d475a'];
@@ -17,45 +17,45 @@ const ICONS = ['💪', '📚', '🧘', '🏃', '💧', '🌙', '✍️', '🎯']
 
 export function CreateHabitScreen() {
   const router = useRouter();
-  const { addHabit } = useHabits();
+  const { createHabit, isSaving, error, validationErrors, clearError } = useCreateHabit();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(COLORS[0]);
   const [icon, setIcon] = useState(ICONS[0]);
 
   const handleSave = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      Alert.alert('Error', 'Please enter a habit name');
-      return;
-    }
+    const result = await createHabit({
+      name,
+      description: description || undefined,
+      color,
+      icon,
+    });
 
-    try {
-      const habit = await addHabit({
-        name: trimmed,
-        description: description.trim() || undefined,
-        color,
-        icon,
-        frequency: 'daily',
-        targetDays: [0, 1, 2, 3, 4, 5, 6],
-      });
-      router.replace(ROUTES.HABIT.DETAIL(habit.id));
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to create habit');
+    if (result?.id) {
+      router.replace(ROUTES.HABIT.DETAIL(result.id));
     }
+  };
+
+  const handleNameChange = (text: string) => {
+    setName(text);
+    if (validationErrors.name) clearError();
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.label}>Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, validationErrors.name && styles.inputError]}
         value={name}
-        onChangeText={setName}
+        onChangeText={handleNameChange}
         placeholder="e.g. Morning run"
         placeholderTextColor="#555"
         autoCapitalize="words"
+        editable={!isSaving}
       />
+      {validationErrors.name ? (
+        <Text style={styles.errorText}>{validationErrors.name}</Text>
+      ) : null}
 
       <Text style={styles.label}>Description (optional)</Text>
       <TextInput
@@ -65,6 +65,7 @@ export function CreateHabitScreen() {
         placeholder="Add a note..."
         placeholderTextColor="#555"
         multiline
+        editable={!isSaving}
       />
 
       <Text style={styles.label}>Icon</Text>
@@ -73,7 +74,8 @@ export function CreateHabitScreen() {
           <Pressable
             key={i}
             style={[styles.iconOption, icon === i && styles.iconSelected]}
-            onPress={() => setIcon(i)}
+            onPress={() => !isSaving && setIcon(i)}
+            disabled={isSaving}
           >
             <Text style={styles.iconText}>{i}</Text>
           </Pressable>
@@ -90,13 +92,26 @@ export function CreateHabitScreen() {
               { backgroundColor: c },
               color === c && styles.colorSelected,
             ]}
-            onPress={() => setColor(c)}
+            onPress={() => !isSaving && setColor(c)}
+            disabled={isSaving}
           />
         ))}
       </View>
 
-      <Pressable style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveText}>Create Habit</Text>
+      {error ? (
+        <Text style={styles.persistError}>{error}</Text>
+      ) : null}
+
+      <Pressable
+        style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+        onPress={handleSave}
+        disabled={isSaving}
+      >
+        {isSaving ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.saveText}>Create Habit</Text>
+        )}
       </Pressable>
     </ScrollView>
   );
@@ -125,9 +140,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#e55',
+  },
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#e55',
+    marginTop: 6,
   },
   iconRow: {
     flexDirection: 'row',
@@ -162,12 +186,23 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#fff',
   },
+  persistError: {
+    fontSize: 14,
+    color: '#e55',
+    marginTop: 16,
+    textAlign: 'center',
+  },
   saveButton: {
     backgroundColor: '#2d5a47',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 32,
+    minHeight: 52,
+  },
+  saveButtonDisabled: {
+    opacity: 0.8,
   },
   saveText: {
     fontSize: 16,

@@ -11,17 +11,18 @@ import {
 import { useRouter } from 'expo-router';
 import { useCreateHabit } from '@/hooks';
 import { ROUTES } from '@/navigation/routes';
-
-const COLORS = ['#2d5a47', '#5a2d47', '#472d5a', '#5a472d', '#2d475a'];
-const ICONS = ['💪', '📚', '🧘', '🏃', '💧', '🌙', '✍️', '🎯'];
+import { useTheme, HABIT_COLORS, HABIT_ICONS } from '@/theme';
+import { SPACING, RADIUS } from '@/theme';
 
 export function CreateHabitScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { createHabit, isSaving, error, validationErrors, clearError } = useCreateHabit();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [color, setColor] = useState(COLORS[0]);
-  const [icon, setIcon] = useState(ICONS[0]);
+  const [showDescription, setShowDescription] = useState(false);
+  const [color, setColor] = useState(HABIT_COLORS[0]);
+  const [icon, setIcon] = useState(HABIT_ICONS[0]);
 
   const handleSave = async () => {
     const result = await createHabit({
@@ -41,39 +42,79 @@ export function CreateHabitScreen() {
     if (validationErrors.name) clearError();
   };
 
+  const canSave = name.trim().length > 0;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.label}>Name</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <TextInput
-        style={[styles.input, validationErrors.name && styles.inputError]}
+        style={[
+          styles.input,
+          {
+            backgroundColor: theme.surface,
+            color: theme.textPrimary,
+            borderColor: validationErrors.name ? theme.error : 'transparent',
+          },
+        ]}
         value={name}
         onChangeText={handleNameChange}
-        placeholder="e.g. Morning run"
-        placeholderTextColor="#555"
+        placeholder="e.g. Morning walk"
+        placeholderTextColor={theme.textTertiary}
         autoCapitalize="words"
         editable={!isSaving}
       />
       {validationErrors.name ? (
-        <Text style={styles.errorText}>{validationErrors.name}</Text>
+        <Text style={[styles.errorText, { color: theme.error }]}>
+          {validationErrors.name}
+        </Text>
       ) : null}
 
-      <Text style={styles.label}>Description (optional)</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Add a note..."
-        placeholderTextColor="#555"
-        multiline
-        editable={!isSaving}
-      />
+      {!showDescription && !description ? (
+        <Pressable
+          onPress={() => setShowDescription(true)}
+          style={styles.addNoteLink}
+        >
+          <Text style={[styles.addNoteText, { color: theme.primary }]}>
+            Add a note
+          </Text>
+        </Pressable>
+      ) : (
+        <View style={styles.descriptionSection}>
+          <TextInput
+            style={[
+              styles.textArea,
+              {
+                backgroundColor: theme.surface,
+                color: theme.textPrimary,
+              },
+            ]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Add a note..."
+            placeholderTextColor={theme.textTertiary}
+            multiline
+            numberOfLines={3}
+            editable={!isSaving}
+          />
+        </View>
+      )}
 
-      <Text style={styles.label}>Icon</Text>
+      <Text style={[styles.label, { color: theme.textTertiary }]}>Icon</Text>
       <View style={styles.iconRow}>
-        {ICONS.map((i) => (
+        {HABIT_ICONS.map((i) => (
           <Pressable
             key={i}
-            style={[styles.iconOption, icon === i && styles.iconSelected]}
+            style={[
+              styles.iconOption,
+              {
+                backgroundColor: theme.surface,
+                borderColor: icon === i ? theme.primary : 'transparent',
+                borderWidth: icon === i ? 2 : 0,
+              },
+            ]}
             onPress={() => !isSaving && setIcon(i)}
             disabled={isSaving}
           >
@@ -82,15 +123,18 @@ export function CreateHabitScreen() {
         ))}
       </View>
 
-      <Text style={styles.label}>Color</Text>
+      <Text style={[styles.label, { color: theme.textTertiary }]}>Color</Text>
       <View style={styles.colorRow}>
-        {COLORS.map((c) => (
+        {HABIT_COLORS.map((c) => (
           <Pressable
             key={c}
             style={[
               styles.colorOption,
               { backgroundColor: c },
-              color === c && styles.colorSelected,
+              color === c && {
+                borderWidth: 2,
+                borderColor: theme.textPrimary,
+              },
             ]}
             onPress={() => !isSaving && setColor(c)}
             disabled={isSaving}
@@ -99,18 +143,24 @@ export function CreateHabitScreen() {
       </View>
 
       {error ? (
-        <Text style={styles.persistError}>{error}</Text>
+        <Text style={[styles.persistError, { color: theme.error }]}>{error}</Text>
       ) : null}
 
       <Pressable
-        style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+        style={[
+          styles.saveButton,
+          {
+            backgroundColor: theme.primary,
+            opacity: !canSave || isSaving ? 0.5 : 1,
+          },
+        ]}
         onPress={handleSave}
-        disabled={isSaving}
+        disabled={!canSave || isSaving}
       >
         {isSaving ? (
           <ActivityIndicator color="#fff" size="small" />
         ) : (
-          <Text style={styles.saveText}>Create Habit</Text>
+          <Text style={styles.saveText}>Create</Text>
         )}
       </Pressable>
     </ScrollView>
@@ -120,89 +170,81 @@ export function CreateHabitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#888',
-    marginBottom: 8,
-    marginTop: 16,
+    paddingBottom: SPACING.xxl,
   },
   input: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
     fontSize: 16,
-    color: '#fff',
-  },
-  inputError: {
+    minHeight: 48,
     borderWidth: 1,
-    borderColor: '#e55',
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
   },
   errorText: {
     fontSize: 13,
-    color: '#e55',
-    marginTop: 6,
+    marginTop: SPACING.sm,
+  },
+  addNoteLink: {
+    marginTop: SPACING.lg,
+  },
+  addNoteText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  descriptionSection: {
+    marginTop: SPACING.lg,
+  },
+  textArea: {
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
   iconRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: SPACING.sm,
   },
   iconOption: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#1a1a1a',
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconSelected: {
-    borderWidth: 2,
-    borderColor: '#2d5a47',
-  },
   iconText: {
-    fontSize: 24,
+    fontSize: 22,
   },
   colorRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SPACING.sm,
   },
   colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  colorSelected: {
-    borderWidth: 3,
-    borderColor: '#fff',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   persistError: {
     fontSize: 14,
-    color: '#e55',
-    marginTop: 16,
+    marginTop: SPACING.md,
     textAlign: 'center',
   },
   saveButton: {
-    backgroundColor: '#2d5a47',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 32,
+    marginTop: SPACING.lg,
     minHeight: 52,
-  },
-  saveButtonDisabled: {
-    opacity: 0.8,
   },
   saveText: {
     fontSize: 16,

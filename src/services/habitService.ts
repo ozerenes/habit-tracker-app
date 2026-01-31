@@ -1,115 +1,113 @@
 import { storage } from '@/storage';
-import type { Habit, HabitCheckIn } from '@/storage';
+import type { Habit, HabitCompletion } from '@/storage';
 import { nanoid } from './utils';
+
+function now(): string {
+  return new Date().toISOString();
+}
 
 export const habitService = {
   async getAllHabits(): Promise<Habit[]> {
-    return storage.getHabits();
+    return storage.habits.getAll();
   },
 
   async getHabitById(id: string): Promise<Habit | null> {
-    const habits = await storage.getHabits();
-    return habits.find((h) => h.id === id) ?? null;
+    return storage.habits.getById(id);
   },
 
   async createHabit(
-    data: Omit<Habit, 'id' | 'streak' | 'createdAt' | 'updatedAt'>
+    data: Omit<Habit, 'id' | 'streak' | 'createdAt' | 'localUpdatedAt' | 'syncStatus'>
   ): Promise<Habit> {
-    const habits = await storage.getHabits();
-    const now = new Date().toISOString();
+    const ts = now();
     const habit: Habit = {
       ...data,
       id: nanoid(),
       streak: 0,
-      createdAt: now,
-      updatedAt: now,
-      _syncVersion: Date.now(),
+      createdAt: ts,
+      localUpdatedAt: ts,
+      syncStatus: 'pending',
     };
-    habits.push(habit);
-    await storage.setHabits(habits);
+    await storage.habits.save(habit);
     return habit;
   },
 
-  async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit | null> {
-    const habits = await storage.getHabits();
-    const index = habits.findIndex((h) => h.id === id);
-    if (index === -1) return null;
-    habits[index] = {
-      ...habits[index],
+  async updateHabit(id: string, updates: Partial<Pick<Habit, 'streak' | 'name' | 'color' | 'icon'>>): Promise<Habit | null> {
+    const habit = await storage.habits.getById(id);
+    if (!habit) return null;
+    const updated: Habit = {
+      ...habit,
       ...updates,
-      updatedAt: new Date().toISOString(),
-      _syncVersion: Date.now(),
+      localUpdatedAt: now(),
+      syncStatus: 'pending',
     };
-    await storage.setHabits(habits);
-    return habits[index];
+    await storage.habits.save(updated);
+    return updated;
   },
 
   async deleteHabit(id: string): Promise<boolean> {
-    const habits = await storage.getHabits();
-    const filtered = habits.filter((h) => h.id !== id);
-    if (filtered.length === habits.length) return false;
-    const checkIns = await storage.getCheckIns();
-    await storage.setCheckIns(checkIns.filter((c) => c.habitId !== id));
-    await storage.setHabits(filtered);
+    const habit = await storage.habits.getById(id);
+    if (!habit) return false;
+    await storage.habits.remove(id);
+    await storage.completions.removeByHabitId(id);
     return true;
   },
 
-  async getCheckInsForHabit(habitId: string): Promise<HabitCheckIn[]> {
-    const checkIns = await storage.getCheckIns();
-    return checkIns.filter((c) => c.habitId === habitId).sort((a, b) => b.date.localeCompare(a.date));
+  async getCompletionsForHabit(habitId: string): Promise<HabitCompletion[]> {
+    return storage.completions.getByHabitId(habitId);
   },
 
-  async addCheckIn(
+  async addCompletion(
     habitId: string,
     date: string,
     count: number = 1,
     note?: string
-  ): Promise<HabitCheckIn> {
-    const checkIns = await storage.getCheckIns();
-    const existing = checkIns.find((c) => c.habitId === habitId && c.date === date);
-    const now = new Date().toISOString();
+  ): Promise<HabitCompletion> {
+    const existing = await storage.completions.getByDate(habitId, date);
+    const ts = now();
 
     if (existing) {
-      existing.count += count;
-      if (note) existing.note = note;
-      existing._syncVersion = Date.now();
-      await storage.setCheckIns(checkIns);
-      return existing;
+      const updated: HabitCompletion = {
+        ...existing,
+        count: existing.count + count,
+        note: note ?? existing.note,
+        localUpdatedAt: ts,
+        syncStatus: 'pending',
+      };
+      await storage.completions.save(updated);
+
+      const streak = await this.calculateStreak(habitId, date);
+      await this.updateHabit(habitId, { streak });
+
+      return updated;
     }
 
-    const checkIn: HabitCheckIn = {
+    const completion: HabitCompletion = {
       id: nanoid(),
       habitId,
       date,
       count,
       note,
-      createdAt: now,
-      _syncVersion: Date.now(),
+      createdAt: ts,
+      localUpdatedAt: ts,
+      syncStatus: 'pending',
     };
-    checkIns.push(checkIn);
-    await storage.setCheckIns(checkIns);
+    await storage.completions.save(completion);
 
-    // Update streak
-    const habit = await this.getHabitById(habitId);
-    if (habit) {
-      const streak = await this.calculateStreak(habitId, date);
-      await this.updateHabit(habitId, { streak });
-    }
+    const streak = await this.calculateStreak(habitId, date);
+    await this.updateHabit(habitId, { streak });
 
-    return checkIn;
+    return completion;
   },
 
   async calculateStreak(habitId: string, upToDate: string): Promise<number> {
-    const checkIns = await this.getCheckInsForHabit(habitId);
+    const completions = await this.getCompletionsForHabit(habitId);
+    const dateSet = new Set(completions.map((c) => c.date));
     let streak = 0;
-    const targetDate = new Date(upToDate);
-    targetDate.setHours(0, 0, 0, 0);
-
-    const dateSet = new Set(checkIns.map((c) => c.date));
+    const targetDate = new Date(upToDate + 'T12:00:00Z');
 
     for (let i = 0; ; i++) {
       const d = new Date(targetDate);
-      d.setDate(d.getDate() - i);
+      d.setUTCDate(d.getUTCDate() - i);
       const dateStr = d.toISOString().slice(0, 10);
       if (!dateSet.has(dateStr)) break;
       streak++;
